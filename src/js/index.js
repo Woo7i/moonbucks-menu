@@ -35,22 +35,22 @@ TODO localStorage Read & Write
 
 TODO 카테고리별 메뉴판 관리
 각각의 종류별로 나뉜다.
-- [ ] 에스프레소, 메뉴판을 관리할 수 있게 만든다.
-- [ ] 프라푸치노, 메뉴판을 관리할 수 있게 만든다.
-- [ ] 블렌디드, 메뉴판을 관리할 수 있게 만든다.
-- [ ] 티바나, 메뉴판을 관리할 수 있게 만든다.
-- [ ] 디저트, 메뉴판을 관리할 수 있게 만든다.
+- [x] 에스프레소, 메뉴판을 관리할 수 있게 만든다.
+- [x] 프라푸치노, 메뉴판을 관리할 수 있게 만든다.
+- [x] 블렌디드, 메뉴판을 관리할 수 있게 만든다.
+- [x] 티바나, 메뉴판을 관리할 수 있게 만든다.
+- [x] 디저트, 메뉴판을 관리할 수 있게 만든다.
 
 
 TODO 페이지 접근시 최초 데이터 Read & Rendering
-- [ ] 페이지가 최초로 접근할 때 localStorage에 에스프레소 메뉴를 읽어온다.
-- [ ] 에스프레소 메뉴를 페이지에 그려준다.
+- [x] 페이지가 최초로 접근할 때 localStorage에 에스프레소 메뉴를 읽어온다.
+- [x] 에스프레소 메뉴를 페이지에 그려준다.
 
  TODO 품절 상태 관리
-- [ ] 품절 버튼을 추가하고 
-- [ ] 품절 버튼을 클릭하게 되면
-- [ ]  localStorge에 상태 값이 저장된다.
-- [ ] 클릭이벤트에서 가장 가까운 li태그의 class 속성 값에 `sold-out` class를 추가하여 상태를 변경한다.
+- [x] 클릭이벤트에서 가장 가까운 li태그의 class 속성 값에 `sold-out` class를 추가하여 상태를 변경한다.
+- [x] 품절 버튼을 추가하고 
+- [x] 품절 버튼을 클릭하게 되면
+- [x]  localStorge에 상태 값이 저장된다.
 
 
 - 품절 상태 메뉴의 마크업
@@ -71,22 +71,41 @@ const store = {
   },
 };
 
+// 상태(변할 수 있는 데이터, 이 앱에서 변하는 것이 무엇인가.) - 메뉴명, 총 갯수(굳이 상태 관리 하지 않아도 됨.)
 function App() {
-  // 상태(변할 수 있는 데이터, 이 앱에서 변하는 것이 무엇인가.) - 메뉴명, 총 갯수(굳이 상태 관리 하지 않아도 됨.)
-  this.menu = []; // 메뉴가 여러개가 될 수 있기에 배열로 초기화.
+  // 메뉴가 여러개가 될 수 있기에 배열로 초기화.
+  this.menu = {
+    espresso: [],
+    frappuccino: [],
+    blended: [],
+    teavana: [],
+    desert: [],
+  };
+  this.currentCategory = "espresso";
+
   this.init = () => {
-    if (store.getLocalStorage().length > 1) {
-      this.menu = store.getLocalStorage;
+    // console.log(store.getLocalStorage())
+    if (store.getLocalStorage()) {
+      this.menu = store.getLocalStorage();
       // console.log(this.menu);
-      render();
     }
+    render();
   };
   const render = () => {
-    const template = this.menu
+    const template = this.menu[this.currentCategory]
       .map((item, index) => {
         return `
     <li data-menu-id="${index}" class="menu-list-item d-flex items-center py-2">
-      <span class="w-100 pl-2 menu-name">${item.name}</span>
+      <span class="w-100 pl-2 menu-name ${item.soldOut ? "sold-out" : ""} ">${
+          item.name
+        }</span>
+      
+      <button
+        type="button"
+        class="bg-gray-50 text-gray-500 text-sm mr-1 menu-sold-out-button"
+      >
+        품절
+      </button>
       <button
         type="button"
         class="bg-gray-50 text-gray-500 text-sm mr-1 menu-edit-button"
@@ -103,30 +122,30 @@ function App() {
       })
       .join("");
 
-    $("#espresso-menu-list").innerHTML = template;
+    $("#menu-list").innerHTML = template;
     //const menuCount = li 개수를 카운팅 해서 총 개수 반환
     countMenuUpdate();
   };
 
   //리팩터링을 위한 함수 모음.
   const countMenuUpdate = () => {
-    const menuCount = $("#espresso-menu-list").querySelectorAll("li").length;
+    const menuCount = $("#menu-list").querySelectorAll("li").length;
     $(".menu-count").innerText = `총 ${menuCount}개`;
   };
 
   // 메뉴의 입력 받는 상태.
   const addMenuName = (e) => {
-    if ($("#espresso-menu-name").value === "") {
+    if ($("#menu-name").value === "") {
       alert("값을 입력해주세요.");
       return; // 구문을 빠져나오기 위해 return 해줘야 아래 스크립트가 실행되지 않음.
     }
 
-    const espressoMenuName = $("#espresso-menu-name").value;
-    this.menu.push({ name: espressoMenuName });
+    const menuName = $("#menu-name").value;
+    this.menu[this.currentCategory].push({ name: menuName });
     store.setLocalStorage(this.menu);
 
     render();
-    $("#espresso-menu-name").value = "";
+    $("#menu-name").value = "";
   };
 
   // 메뉴를 수정 하는 기능.
@@ -135,7 +154,7 @@ function App() {
     // e의 값으로 오는 li 태그 중 가장 가까운 부모 태그 할당.
     const $menuName = e.target.closest("li").querySelector(".menu-name");
     const updatedMenuName = prompt("메뉴명을 수정하세요.", $menuName.innerText);
-    this.menu[menuId].name = updatedMenuName;
+    this.menu[this.currentCategory][menuId].name = updatedMenuName;
     store.setLocalStorage(this.menu);
     $menuName.innerText = updatedMenuName;
   };
@@ -145,39 +164,63 @@ function App() {
     // confirm() : 확인 == true, 취소 == false를 반환하는 메소드
     if (confirm("이 메뉴를 삭제 하시갰습니까?")) {
       const menuId = e.target.closest("li").dataset.menuId;
-      this.menu.splice(menuId, 1);
+      this.menu[this.currentCategory].splice(menuId, 1);
       store.setLocalStorage(this.menu);
       e.target.closest("li").remove();
       countMenuUpdate();
     }
   };
+  // 메뉴를 품절처리 하는 기능.
+  const soldOutMenu = (e) => {
+    const menuId = e.target.closest("li").dataset.menuId;
+    this.menu[this.currentCategory][menuId].soldOut =
+      !this.menu[this.currentCategory][menuId].soldOut;
+    store.setLocalStorage(this.menu);
+    render();
+  };
 
-  $("#espresso-menu-list").addEventListener("click", (e) => {
+  $("#menu-list").addEventListener("click", (e) => {
     if (e.target.classList.contains("menu-edit-button")) {
       fixedMenuUpdate(e);
+      return;
+      // 연속된 if문에서 계속되는 연산이 없어지도록 문을 나오기 위해 return을 적는 습관을 들이자.
     }
     if (e.target.classList.contains("menu-remove-button")) {
       removeMenuName(e);
+      return;
+    }
+    if (e.target.classList.contains("menu-sold-out-button")) {
+      soldOutMenu(e);
+      return;
     }
   });
 
   document
-    .querySelector("#espresso-menu-form") // $를 써서 개선 가능.
+    .querySelector("#menu-form") // $를 써서 개선 가능.
     .addEventListener("submit", (e) => {
       e.preventDefault(); // form 태그가 자동으로 전송되는 걸 막아준다.
     });
 
   // 클릭 이벤트를 통해 입력 값을 받아오는 것.
-  $("#espresso-menu-submit-button").addEventListener("click", () =>
-    addMenuName()
-  );
+  $("#menu-submit-button").addEventListener("click", () => addMenuName());
 
   // 엔터 입력이 아닐시 구문 나옴.
-  $("#espresso-menu-name").addEventListener("keypress", (e) => {
+  $("#menu-name").addEventListener("keypress", (e) => {
     if (e.key !== "Enter") {
       return;
     }
     addMenuName();
+  });
+
+  $("nav").addEventListener("click", (e) => {
+    const isCategoryButton = e.target.classList.contains("cafe-category-name");
+    if (isCategoryButton) {
+      const categoryName = e.target.dataset.categoryName;
+      //dataset :  data-category-name="" 에서 data 속성의 값을 가져오는 것.
+      this.currentCategory = categoryName;
+      $("#category-title").innerHTML = `${e.target.innerText} 메뉴 관리`;
+      render();
+    }
   });
 }
 
