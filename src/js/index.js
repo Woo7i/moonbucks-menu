@@ -29,9 +29,9 @@ TODO localStorage Read & Write
 - [ ] [localStorage](https://developer.mozilla.org/ko/docs/Web/API/Window/localStorage)에 
 데이터를 저장한다.
 - [x] 메뉴를 추가할 때
-- [ ] 메뉴를 수정할 때
-- [ ] 메뉴를 삭제할 때
-- [ ] localStorage에 있는 데이터를  읽어온다.
+- [x] 메뉴를 수정할 때
+- [x] 메뉴를 삭제할 때
+- [x] localStorage에 있는 데이터를  읽어온다.
 
 TODO 카테고리별 메뉴판 관리
 각각의 종류별로 나뉜다.
@@ -66,31 +66,22 @@ const store = {
     //저장소의 key, value 데이터를 JSON 형식으로 변환.
   },
   getLocalStorage() {
-    localStorage.getItem("menu");
+    return JSON.parse(localStorage.getItem("menu"));
+    //parsing을 통해 문자열을 값으로 변경.
   },
 };
 
 function App() {
   // 상태(변할 수 있는 데이터, 이 앱에서 변하는 것이 무엇인가.) - 메뉴명, 총 갯수(굳이 상태 관리 하지 않아도 됨.)
   this.menu = []; // 메뉴가 여러개가 될 수 있기에 배열로 초기화.
-
-  //리팩터링을 위한 함수 모음.
-  const countMenuUpdate = () => {
-    const menuCount = $("#espresso-menu-list").querySelectorAll("li").length;
-    $(".menu-count").innerText = `총 ${menuCount}개`;
-  };
-
-  // 메뉴의 입력 받는 상태.
-  const addMenuName = (e) => {
-    if ($("#espresso-menu-name").value === "") {
-      alert("값을 입력해주세요.");
-      return; // 구문을 빠져나오기 위해 return 해줘야 아래 스크립트가 실행되지 않음.
+  this.init = () => {
+    if (store.getLocalStorage().length > 1) {
+      this.menu = store.getLocalStorage;
+      // console.log(this.menu);
+      render();
     }
-
-    const espressoMenuName = $("#espresso-menu-name").value;
-    this.menu.push({ name: espressoMenuName });
-    store.setLocalStorage(this.menu);
-
+  };
+  const render = () => {
     const template = this.menu
       .map((item, index) => {
         return `
@@ -115,6 +106,26 @@ function App() {
     $("#espresso-menu-list").innerHTML = template;
     //const menuCount = li 개수를 카운팅 해서 총 개수 반환
     countMenuUpdate();
+  };
+
+  //리팩터링을 위한 함수 모음.
+  const countMenuUpdate = () => {
+    const menuCount = $("#espresso-menu-list").querySelectorAll("li").length;
+    $(".menu-count").innerText = `총 ${menuCount}개`;
+  };
+
+  // 메뉴의 입력 받는 상태.
+  const addMenuName = (e) => {
+    if ($("#espresso-menu-name").value === "") {
+      alert("값을 입력해주세요.");
+      return; // 구문을 빠져나오기 위해 return 해줘야 아래 스크립트가 실행되지 않음.
+    }
+
+    const espressoMenuName = $("#espresso-menu-name").value;
+    this.menu.push({ name: espressoMenuName });
+    store.setLocalStorage(this.menu);
+
+    render();
     $("#espresso-menu-name").value = "";
   };
 
@@ -133,6 +144,9 @@ function App() {
   const removeMenuName = (e) => {
     // confirm() : 확인 == true, 취소 == false를 반환하는 메소드
     if (confirm("이 메뉴를 삭제 하시갰습니까?")) {
+      const menuId = e.target.closest("li").dataset.menuId;
+      this.menu.splice(menuId, 1);
+      store.setLocalStorage(this.menu);
       e.target.closest("li").remove();
       countMenuUpdate();
     }
@@ -170,4 +184,5 @@ function App() {
 // App(); 일반 함수는 window 객체를 this로 참조함.
 
 const app = new App();
-//new 생성자를 통해 this를 함수 객체를 참조하도록 함.
+//new 생성자메서드를 통해 생성된 객체의 this를 함수 객체를 참조하도록 함.
+app.init();
