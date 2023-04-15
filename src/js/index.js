@@ -56,20 +56,8 @@ TODO 페이지 접근시 최초 데이터 Read & Rendering
 - 품절 상태 메뉴의 마크업
 */
 
-const $ = (selector) => document.querySelector(selector);
-// $ 자바스크립트에서 DOM 엘리먼트를 가져올 때 표현하는 키워드.
-
-//브라우저 로컬 스토리지에 데이터를 저장할 수 있는 객체 함수.
-const store = {
-  setLocalStorage(menu) {
-    localStorage.setItem("menu", JSON.stringify(menu));
-    //저장소의 key, value 데이터를 JSON 형식으로 변환.
-  },
-  getLocalStorage() {
-    return JSON.parse(localStorage.getItem("menu"));
-    //parsing을 통해 문자열을 값으로 변경.
-  },
-};
+import { $ } from "./utils/dom.js";
+import store from "./store/index.js";
 
 // 상태(변할 수 있는 데이터, 이 앱에서 변하는 것이 무엇인가.) - 메뉴명, 총 갯수(굳이 상태 관리 하지 않아도 됨.)
 function App() {
@@ -90,6 +78,7 @@ function App() {
       // console.log(this.menu);
     }
     render();
+    initEventLiseners();
   };
   const render = () => {
     const template = this.menu[this.currentCategory]
@@ -129,7 +118,7 @@ function App() {
 
   //리팩터링을 위한 함수 모음.
   const countMenuUpdate = () => {
-    const menuCount = $("#menu-list").querySelectorAll("li").length;
+    const menuCount = this.menu[this.currentCategory].length;
     $(".menu-count").innerText = `총 ${menuCount}개`;
   };
 
@@ -143,7 +132,6 @@ function App() {
     const menuName = $("#menu-name").value;
     this.menu[this.currentCategory].push({ name: menuName });
     store.setLocalStorage(this.menu);
-
     render();
     $("#menu-name").value = "";
   };
@@ -156,7 +144,7 @@ function App() {
     const updatedMenuName = prompt("메뉴명을 수정하세요.", $menuName.innerText);
     this.menu[this.currentCategory][menuId].name = updatedMenuName;
     store.setLocalStorage(this.menu);
-    $menuName.innerText = updatedMenuName;
+    render();
   };
 
   // 메뉴를 삭제 하는 기능.
@@ -166,8 +154,7 @@ function App() {
       const menuId = e.target.closest("li").dataset.menuId;
       this.menu[this.currentCategory].splice(menuId, 1);
       store.setLocalStorage(this.menu);
-      e.target.closest("li").remove();
-      countMenuUpdate();
+      render();
     }
   };
   // 메뉴를 품절처리 하는 기능.
@@ -179,49 +166,50 @@ function App() {
     render();
   };
 
-  $("#menu-list").addEventListener("click", (e) => {
-    if (e.target.classList.contains("menu-edit-button")) {
-      fixedMenuUpdate(e);
-      return;
-      // 연속된 if문에서 계속되는 연산이 없어지도록 문을 나오기 위해 return을 적는 습관을 들이자.
-    }
-    if (e.target.classList.contains("menu-remove-button")) {
-      removeMenuName(e);
-      return;
-    }
-    if (e.target.classList.contains("menu-sold-out-button")) {
-      soldOutMenu(e);
-      return;
-    }
-  });
+  const initEventLiseners = () => {
+    $("#menu-list").addEventListener("click", (e) => {
+      if (e.target.classList.contains("menu-edit-button")) {
+        fixedMenuUpdate(e);
+        return;
+        // 연속된 if문에서 계속되는 연산이 없어지도록 문을 나오기 위해 return을 적는 습관을 들이자.
+      }
+      if (e.target.classList.contains("menu-remove-button")) {
+        removeMenuName(e);
+        return;
+      }
+      if (e.target.classList.contains("menu-sold-out-button")) {
+        soldOutMenu(e);
+        return;
+      }
+    });
 
-  document
-    .querySelector("#menu-form") // $를 써서 개선 가능.
-    .addEventListener("submit", (e) => {
+    $("#menu-form").addEventListener("submit", (e) => {
       e.preventDefault(); // form 태그가 자동으로 전송되는 걸 막아준다.
     });
 
-  // 클릭 이벤트를 통해 입력 값을 받아오는 것.
-  $("#menu-submit-button").addEventListener("click", () => addMenuName());
+    // 클릭 이벤트를 통해 입력 값을 받아오는 것.
+    $("#menu-submit-button").addEventListener("click", () => addMenuName());
 
-  // 엔터 입력이 아닐시 구문 나옴.
-  $("#menu-name").addEventListener("keypress", (e) => {
-    if (e.key !== "Enter") {
-      return;
-    }
-    addMenuName();
-  });
+    // 엔터 입력이 아닐시 구문 나옴.
+    $("#menu-name").addEventListener("keypress", (e) => {
+      if (e.key !== "Enter") {
+        return;
+      }
+      addMenuName();
+    });
 
-  $("nav").addEventListener("click", (e) => {
-    const isCategoryButton = e.target.classList.contains("cafe-category-name");
-    if (isCategoryButton) {
-      const categoryName = e.target.dataset.categoryName;
-      //dataset :  data-category-name="" 에서 data 속성의 값을 가져오는 것.
-      this.currentCategory = categoryName;
-      $("#category-title").innerHTML = `${e.target.innerText} 메뉴 관리`;
-      render();
-    }
-  });
+    $("nav").addEventListener("click", (e) => {
+      const isCategoryButton =
+        e.target.classList.contains("cafe-category-name");
+      if (isCategoryButton) {
+        const categoryName = e.target.dataset.categoryName;
+        //dataset :  data-category-name="" 에서 data 속성의 값을 가져오는 것.
+        this.currentCategory = categoryName;
+        $("#category-title").innerHTML = `${e.target.innerText} 메뉴 관리`;
+        render();
+      }
+    });
+  };
 }
 
 // App(); 일반 함수는 window 객체를 this로 참조함.
